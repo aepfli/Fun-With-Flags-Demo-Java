@@ -6,3 +6,4 @@ demo.iml
 opentelemetry-javaagent.jar
 target/
 .claude/
+*.deb
