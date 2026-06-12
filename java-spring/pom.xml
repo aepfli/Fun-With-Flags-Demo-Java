@@ -55,6 +55,16 @@
 			<artifactId>flagd</artifactId>
 			<version>0.11.8</version>
 		</dependency>
+
+		<!-- Step 6 (Observability): OpenFeature OTel hook — turns each flag
+		     evaluation into a span/metric. The OTel Java agent supplies the
+		     SDK/exporter/auto-instrumentation at runtime, so this hook is the
+		     only OTel dependency the app itself needs. -->
+		<dependency>
+			<groupId>dev.openfeature.contrib.hooks</groupId>
+			<artifactId>otel</artifactId>
+			<version>3.2.1</version>
+		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
@@ -74,6 +84,28 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<!--
+				  Step 6 (Observability) — OpenTelemetry Java agent (commented out).
+				  Zero-code auto-instrumentation: it ships the SDK, the OTLP exporter
+				  and Spring/HTTP instrumentation, so nothing OTel-related is needed
+				  in the code. Download the agent into this folder, then uncomment the
+				  <configuration> block below to attach it on `./mvnw spring-boot:run`.
+				  Pair it with the OpenFeature `otel` hook (already a dependency above)
+				  to turn flag evaluations into spans.
+
+				  curl -L -o opentelemetry-javaagent.jar \
+				    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+
+				<configuration>
+					<jvmArguments>
+						-javaagent:${project.basedir}/opentelemetry-javaagent.jar
+						-Dotel.service.name=fun-with-flags-java-spring
+						-Dotel.exporter.otlp.endpoint=http://localhost:4317
+						-Dotel.exporter.otlp.protocol=grpc
+						-Dotel.logs.exporter=none
+					</jvmArguments>
+				</configuration>
+				-->
 			</plugin>
 		</plugins>
 	</build>

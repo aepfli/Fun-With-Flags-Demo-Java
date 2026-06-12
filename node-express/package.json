@@ -8,11 +8,15 @@
   },
   "scripts": {
     "start": "node src/index.js",
+    "//start:otel": "Step 6 (Observability) — auto-instrumentation 'agent'. After `npm install @opentelemetry/auto-instrumentations-node @opentelemetry/sdk-node @opentelemetry/exporter-trace-otlp-grpc` and setting OTEL_EXPORTER_OTLP_ENDPOINT, run this instead of `start`.",
+    "start:otel": "node --require @opentelemetry/auto-instrumentations-node/register src/index.js",
     "test": "vitest run"
   },
   "dependencies": {
     "@openfeature/flagd-provider": "^0.15.0",
+    "@openfeature/open-telemetry-hooks": "^1.0.0",
     "@openfeature/server-sdk": "^1.21.0",
+    "@opentelemetry/api": "^1.9.1",
     "express": "^5.2.1",
     "pino": "^10.3.1"
   },

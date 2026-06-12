@@ -12,6 +12,15 @@ dependencies = [
     "uvicorn[standard]>=0.27",
     "openfeature-sdk>=0.7",
     "openfeature-provider-flagd>=0.2",
+    # Step 6 (Observability): OpenFeature OTel hook — the only OTel dependency
+    # the app code needs. It turns each flag evaluation into a span/metric.
+    "openfeature-hooks-opentelemetry>=0.3",
+    # Auto-instrumentation (commented out) — Python's "agent". Uncomment these,
+    # run `opentelemetry-bootstrap -a install`, then start the app with
+    # `opentelemetry-instrument uvicorn app.main:app` to export traces/metrics.
+    #"opentelemetry-distro>=0.45b0",
+    #"opentelemetry-exporter-otlp>=1.24",
+    #"opentelemetry-instrumentation-fastapi>=0.45b0",
 ]
 
 [project.optional-dependencies]

@@ -58,6 +58,26 @@
 			<version>0.11.8</version>
 		</dependency>
 
+		<!-- Step 6 (Observability): OpenFeature OTel hook — turns each flag
+		     evaluation into a span/metric. This is the only OTel dependency the
+		     app code needs; the quarkus-opentelemetry extension below (commented
+		     out) supplies the SDK/exporter/auto-instrumentation. -->
+		<dependency>
+			<groupId>dev.openfeature.contrib.hooks</groupId>
+			<artifactId>otel</artifactId>
+			<version>3.2.1</version>
+		</dependency>
+
+		<!-- Step 6 (Observability) — Quarkus OpenTelemetry extension (commented
+		     out). Quarkus's built-in auto-instrumentation: uncomment it (and the
+		     quarkus.otel.* config in application.properties) to export traces and
+		     metrics. No agent needed — the extension is the Quarkus equivalent.
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-opentelemetry</artifactId>
+		</dependency>
+		-->
+
 		<!-- Test dependencies -->
 		<dependency>
 			<groupId>io.quarkus</groupId>
