@@ -1,9 +1,13 @@
-// Java (Spring Boot) Codespace. Slim Java 21 base + Docker-in-Docker so
-// the local docker-compose.yaml (flagd on 8013-8016) runs inside the
+// Java (Spring Boot) Codespace. Slim Java 21 base + Docker-in-Docker so the
+// local docker-compose.yaml (flagd, observability, loadgen) runs inside the
 // Codespace. Opens directly in the java-spring/ folder.
+//
+// Built from a tiny Dockerfile that strips a broken Yarn apt repo shipped in
+// the base java:1-21 image (missing GPG key) — without that fix, the
+// docker-in-docker feature's apt-get update fails and the build dies.
 {
   "name": "Fun With Flags · Java (Spring Boot)",
-  "image": "mcr.microsoft.com/devcontainers/java:1-21",
+  "build": { "dockerfile": "Dockerfile" },
   "workspaceFolder": "/workspaces/Fun-With-Flags-Demo/java-spring",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
