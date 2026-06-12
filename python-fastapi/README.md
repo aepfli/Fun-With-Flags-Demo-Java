@@ -164,19 +164,19 @@ Run `.venv/bin/pytest`. The container starts, tests pass, it shuts down.
 
 ## Step 6 OpenTelemetry observability
 
-Every flag evaluation becomes a span in Tempo, nested under the HTTP request span that triggered it. The code lives on [`step/python-fastapi/6`](https://github.com/aepfli/Fun-With-Flags-Demo/tree/step/python-fastapi/6); the shared Grafana LGTM container lives in [`../observability/`](../observability/README.md).
+Every flag evaluation becomes a span in Tempo, nested under the HTTP request span that triggered it. Steps 6 and 7 run from `main` — they use the shared [`../observability/`](../observability/README.md) and [`../loadgen/`](../loadgen/README.md) stacks, which only stay current on `main` (the `step/python-fastapi/6` and `/7` branches predate them and don't carry them). In a per-language Codespace the full repo is still on disk, so reach those sibling folders from the terminal with `cd ../observability` even though the Explorer only lists this folder.
 
-Run `cd ../observability && docker compose up -d`, check out `step/python-fastapi/6`, and start the app with `.venv/bin/uvicorn app.main:app`. Grafana UI at <http://localhost:3000>, open the **Fun With Flags — Feature Flag Metrics** dashboard or use Explore → Tempo to pick the `fun-with-flags-python-fastapi` service.
+Run `cd ../observability && docker compose up -d`, then from this folder on `main` start the app with `.venv/bin/uvicorn app.main:app`. Grafana UI at <http://localhost:3000>, open the **Fun With Flags — Feature Flag Metrics** dashboard or use Explore → Tempo to pick the `fun-with-flags-python-fastapi` service.
 
 ## Step 7 Progressive rollout
 
 A new greeting algorithm is rolling out. It is slower (200ms) than the old code path and it errors 10% of the time. The job of step 7 is to roll it out gradually, watch the consequences in Grafana, and roll it back without redeploying.
 
-The code lives on [`step/python-fastapi/7`](https://github.com/aepfli/Fun-With-Flags-Demo/tree/step/python-fastapi/7) — the handler reads a new `new_greeting_algo` flag, and the middleware passes `?userId=...` through as the OpenFeature `targetingKey` so the fractional rollout buckets stick per user.
+The code is on `main`, in this folder — the handler reads a new `new_greeting_algo` flag, and the middleware passes `?userId=...` through as the OpenFeature `targetingKey` so the fractional rollout buckets stick per user.
 
 Two moving parts work together:
 
 - **[`../loadgen/`](../loadgen/README.md)** drives traffic. It is gated by an `loadgen_active` flag (already in this folder's `flags.json`, default `"off"`) — flip it to `"on"` to start the load, back to `"off"` to stop. The feature-flag demo, feature-flagged.
-- **`flags.json`** on `step/python-fastapi/7` defines `new_greeting_algo` with a flagd `fractional` rule, defaulting to 100% off. Bump the percentage and flagd hot-reloads — no app restart.
+- **`flags.json`** in this folder (on `main`) defines `new_greeting_algo` with a flagd `fractional` rule, defaulting to 100% off. Bump the percentage and flagd hot-reloads — no app restart.
 
 Run the demo: start observability + the app + loadgen, flip `loadgen_active` to `"on"`, then ramp `new_greeting_algo` from `[["off",100],["on",0]]` to 10/90, then 50/50. Watch the **HTTP request latency (p50, p99)** and **HTTP 5xx per second** panels in Grafana climb. Roll back to 100/0 the moment something looks bad.
