@@ -1,0 +1,28 @@
+// Node (Express) Codespace. Slim Node 22 base + Docker-in-Docker so the
+// local docker-compose.yaml (flagd on 8013-8016) runs inside the
+// Codespace. Opens directly in the node-express/ folder.
+{
+  "name": "Fun With Flags · Node (Express)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22",
+  "workspaceFolder": "/workspaces/Fun-With-Flags-Demo/node-express",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8080, 8013, 8014, 8015, 8016, 3000, 4317, 4318],
+  "portsAttributes": {
+    "8080": { "label": "App" },
+    "8013": { "label": "flagd gRPC eval" },
+    "8014": { "label": "flagd management/metrics" },
+    "8015": { "label": "flagd sync (IN_PROCESS)" },
+    "8016": { "label": "flagd OFREP" },
+    "3000": { "label": "Grafana" },
+    "4317": { "label": "OTLP gRPC" },
+    "4318": { "label": "OTLP HTTP" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "humao.rest-client"]
+    }
+  },
+  "postCreateCommand": "npm ci || true"
+}
