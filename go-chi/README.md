@@ -161,19 +161,32 @@ Run `go test ./...`. The container starts, the tests pass, it shuts down. No sec
 
 ## Step 6 OpenTelemetry observability
 
-Every flag evaluation becomes a span in Tempo, nested under the HTTP request span that triggered it. Steps 6 and 7 run from `main` — they use the shared [`../observability/`](../observability/README.md) and [`../loadgen/`](../loadgen/README.md) stacks, which only stay current on `main` (the `step/go-chi/6` and `/7` branches predate them and don't carry them). In a per-language Codespace the full repo is still on disk, so reach those sibling folders from the terminal with `cd ../observability` even though the Explorer only lists this folder.
+The goal: every flag evaluation shows up as a span in Tempo, nested under the HTTP request span that triggered it. Go is the one language here with **no OTel agent** — there's no runtime auto-instrumentation to switch on, so the OpenTelemetry setup is code you write. That's the trade-off for Go; the upside is everything is explicit and in front of you.
 
-Run `cd ../observability && docker compose up -d`, then from this folder on `main` start the app with `go run .`. Grafana UI at <http://localhost:3000>, open the **Fun With Flags — Feature Flag Metrics** dashboard or use Explore → Tempo to pick the `fun-with-flags-go-chi` service.
+What you do:
+
+1. Bring up the shared stack: `cd ../observability && docker compose up -d`. (In a per-language Codespace the whole repo is on disk, so `../observability` works from the terminal even though the Explorer only lists this folder.)
+2. Add the dependencies — the OpenFeature OTel hook plus the OTel SDK and OTLP exporter:
+
+    ```sh
+    go get github.com/open-feature/go-sdk-contrib/hooks/open-telemetry
+    go get go.opentelemetry.io/otel/sdk go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc
+    ```
+
+3. Wire a tracer provider with the OTLP exporter, wrap the chi router with `otelhttp`, and register the OpenFeature OTel hook so evaluations become spans.
+4. Start the app with `go run .`, hit it a few times, and open Grafana on the forwarded port `3000` — Explore → Tempo, pick the `fun-with-flags-go-chi` service.
+
+Want the worked version? [`step/go-chi/6`](https://github.com/aepfli/Fun-With-Flags-Demo/tree/step/go-chi/6) has the full wiring.
 
 ## Step 7 Progressive rollout
 
 A new greeting algorithm is rolling out. It is slower (200ms) than the old code path and it errors 10% of the time. The job of step 7 is to roll it out gradually, watch the consequences in Grafana, and roll it back without redeploying.
 
-The code is on `main`, in this folder — the handler reads a new `new_greeting_algo` flag, and the middleware passes `?userId=...` through as the OpenFeature `targetingKey` so the fractional rollout buckets stick per user.
+The flag is ready on `main`: `flags.json` defines `new_greeting_algo` with a flagd `fractional` rule, defaulting to 100% off. The handler is yours to write — read `new_greeting_algo` in your request handler, and when it's on, add the 200ms delay and the 10% failure. To make the fractional rollout stick per user, pass `?userId=...` through as the OpenFeature `targetingKey`. [`step/go-chi/7`](https://github.com/aepfli/Fun-With-Flags-Demo/tree/step/go-chi/7) has a worked version.
 
-Two moving parts work together:
+Two moving parts drive the demo:
 
-- **[`../loadgen/`](../loadgen/README.md)** drives traffic. It is gated by an `loadgen_active` flag (already in this folder's `flags.json`, default `"off"`) — flip it to `"on"` to start the load, back to `"off"` to stop. The feature-flag demo, feature-flagged.
-- **`flags.json`** in this folder (on `main`) defines `new_greeting_algo` with a flagd `fractional` rule, defaulting to 100% off. Bump the percentage and flagd hot-reloads — no app restart.
+- **[`../loadgen/`](../loadgen/README.md)** drives traffic. It is gated by a `loadgen_active` flag (already in this folder's `flags.json`, default `"off"`) — flip it to `"on"` to start the load, back to `"off"` to stop. The feature-flag demo, feature-flagged.
+- Bump `new_greeting_algo`'s percentage and flagd hot-reloads — no app restart.
 
 Run the demo: start observability + the app + loadgen, flip `loadgen_active` to `"on"`, then ramp `new_greeting_algo` from `[["off",100],["on",0]]` to 10/90, then 50/50. Watch the **HTTP request latency (p50, p99)** and **HTTP 5xx per second** panels in Grafana climb. Roll back to 100/0 the moment something looks bad.

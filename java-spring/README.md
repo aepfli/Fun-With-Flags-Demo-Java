@@ -6,7 +6,7 @@ Follow each Step and see how OpenFeature can be used within a Spring Boot Applic
 
 Within [requests.http](requests.http) you will find requests for each section to play with.
 
-> Each numbered step lives on its own branch — `step/java-spring/1.1`, `1.2`, `2.1`, `3.1`, `3.1.1`, `3.2`, `4`, `5.1`, `5.2`, `6`, `7`. `main` carries the full end state. Check out a step branch to see the codebase at that point.
+> Each numbered step lives on its own branch — `step/java-spring/1.1`, `1.2`, `2.1`, `3.1`, `3.1.1`, `3.2`, `4`, `5.1`, `5.2`, `6`, `7`. `main` is your starting point: the app through step 5.2, plus the step-6/7 scaffolding (the OpenFeature OTel hook dependency and a commented-out OTel agent) ready for you to build on. Check out a step branch to see a worked solution for that step.
 
 ## Step 1 Basic OpenFeature Setup
 
@@ -404,19 +404,35 @@ There are two different behaviours we can observe depending on the mode:
 
 ## Step 6 OpenTelemetry observability
 
-Every flag evaluation becomes a span in Tempo, nested under the HTTP request span that triggered it. Steps 6 and 7 run from `main` — they use the shared [`../observability/`](../observability/README.md) and [`../loadgen/`](../loadgen/README.md) stacks, which only stay current on `main` (the `step/java-spring/6` and `/7` branches predate them and don't carry them). In a per-language Codespace the full repo is still on disk, so reach those sibling folders from the terminal with `cd ../observability` even though the Explorer only lists this folder.
+The goal: every flag evaluation shows up as a span in Tempo, nested under the HTTP request span that triggered it. The OTel plumbing is scaffolded on `main` so you spend your time on the OpenFeature side, not on wiring OpenTelemetry:
 
-Run `cd ../observability && docker compose up -d`, then from this folder on `main` start the app. Grafana UI at <http://localhost:3000>, open the **Fun With Flags — Feature Flag Metrics** dashboard or use Explore → Tempo to pick the `fun-with-flags-java-spring` service — one span per evaluation with the flag key, variant, and reason attached as attributes.
+- The **OpenFeature OTel hook** (`dev.openfeature.contrib.hooks:otel`) is already a dependency in `pom.xml` — the only OTel dependency the app code needs.
+- The **OTel Java agent** is set up but commented out in the `spring-boot-maven-plugin`. The agent supplies the SDK, the OTLP exporter, and Spring/HTTP auto-instrumentation with zero code.
+
+What's left for you is the OpenFeature → OpenTelemetry bridge:
+
+1. Bring up the shared stack: `cd ../observability && docker compose up -d`. (In a per-language Codespace the whole repo is on disk, so `../observability` works from the terminal even though the Explorer only lists this folder.)
+2. Download the agent jar and uncomment the `<configuration>` block in `pom.xml` — the `curl` command is right there in the comment.
+3. Register the hook so evaluations become spans — add to `OpenFeatureConfig`:
+
+    ```java
+    api.addHooks(new TracesHook());
+    api.addHooks(new MetricsHook(GlobalOpenTelemetry.get()));
+    ```
+
+4. Start the app, hit it a few times, and open Grafana on the forwarded port `3000` — Explore → Tempo, pick the `fun-with-flags-java-spring` service. One span per evaluation, with the flag key, variant, and reason as attributes.
+
+Want the worked version? [`step/java-spring/6`](https://github.com/aepfli/Fun-With-Flags-Demo/tree/step/java-spring/6) has it — wired through the SDK rather than the agent, but the hook registration is the same idea.
 
 ## Step 7 Progressive rollout
 
 A new greeting algorithm is rolling out. It is slower (200ms) than the old code path and it errors 10% of the time. The job of step 7 is to roll it out gradually, watch the consequences in Grafana, and roll it back without redeploying.
 
-The code is on `main`, in this folder — the handler reads a new `new_greeting_algo` flag, and the middleware passes `?userId=...` through as the OpenFeature `targetingKey` so the fractional rollout buckets stick per user.
+The flag is ready on `main`: `flags.json` defines `new_greeting_algo` with a flagd `fractional` rule, defaulting to 100% off. The handler is yours to write — read `new_greeting_algo` in `IndexController`, and when it's on, add the 200ms delay and the 10% failure. To make the fractional rollout stick per user, pass `?userId=...` through as the OpenFeature `targetingKey` in `LanguageInterceptor`. [`step/java-spring/7`](https://github.com/aepfli/Fun-With-Flags-Demo/tree/step/java-spring/7) has a worked version.
 
-Two moving parts work together:
+Two moving parts drive the demo:
 
-- **[`../loadgen/`](../loadgen/README.md)** drives traffic. It is gated by an `loadgen_active` flag (already in this folder's `flags.json`, default `"off"`) — flip it to `"on"` to start the load, back to `"off"` to stop. The feature-flag demo, feature-flagged.
-- **`flags.json`** in this folder (on `main`) defines `new_greeting_algo` with a flagd `fractional` rule, defaulting to 100% off. Bump the percentage and flagd hot-reloads — no app restart.
+- **[`../loadgen/`](../loadgen/README.md)** drives traffic. It is gated by a `loadgen_active` flag (already in this folder's `flags.json`, default `"off"`) — flip it to `"on"` to start the load, back to `"off"` to stop. The feature-flag demo, feature-flagged.
+- Bump `new_greeting_algo`'s percentage and flagd hot-reloads — no app restart.
 
 Run the demo: start observability + the app + loadgen, flip `loadgen_active` to `"on"`, then ramp `new_greeting_algo` from `[["off",100],["on",0]]` to 10/90, then 50/50. Watch the **HTTP request latency (p50, p99)** and **HTTP 5xx per second** panels in Grafana climb. Roll back to 100/0 the moment something looks bad.
