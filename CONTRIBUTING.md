@@ -16,9 +16,9 @@ Every language folder assumes you `cd` into it and everything runs from there: b
 
 Folder names read `<language>-<framework>` (`java-spring`, `java-quarkus`, `go-chi`, `python-fastapi`, `node-express`) so a second framework per language — `java-micronaut`, `python-flask`, `go-gin`, `node-fastify` — can slot in without renaming anything.
 
-## Devcontainer phases
+## Devcontainer configs
 
-There are three Codespaces configs under `.devcontainer/`: `beginner/`, `intermediate/`, `expert/`. Each one only ships what its phase needs — Beginner skips Docker-in-Docker entirely so the boot is quick, Intermediate adds DinD + flagd ports, Expert adds the LGTM and loadgen ports on top. Changes to *any* of them are cross-cutting and should land in their own PR (don't bundle a devcontainer tweak with a language change).
+There's one Codespaces config per language under `.devcontainer/`: `java-spring/`, `java-quarkus/`, `go-chi/`, `python-fastapi/`, `node-express/`. Each uses a slim, language-specific base image (so the boot is quick), adds Docker-in-Docker so that folder's `docker-compose.yaml` runs, and sets `workspaceFolder` so the Codespace opens straight into its language folder. Changes to *any* of them are cross-cutting and should land in their own PR (don't bundle a devcontainer tweak with a language change).
 
 ## Tone for READMEs
 

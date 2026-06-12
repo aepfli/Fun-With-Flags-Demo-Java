@@ -1,9 +1,11 @@
 # Fun With Flags — An OpenFeature Demo
 
 [![CI](https://github.com/aepfli/Fun-With-Flags-Demo/actions/workflows/ci.yml/badge.svg)](https://github.com/aepfli/Fun-With-Flags-Demo/actions/workflows/ci.yml)
-[![Beginner](https://img.shields.io/static/v1?label=Codespace&message=Beginner&color=22c55e&logo=github)](https://codespaces.new/aepfli/Fun-With-Flags-Demo?devcontainer_path=.devcontainer%2Fbeginner%2Fdevcontainer.json)
-[![Intermediate](https://img.shields.io/static/v1?label=Codespace&message=Intermediate&color=eab308&logo=github)](https://codespaces.new/aepfli/Fun-With-Flags-Demo?devcontainer_path=.devcontainer%2Fintermediate%2Fdevcontainer.json)
-[![Expert](https://img.shields.io/static/v1?label=Codespace&message=Expert&color=ef4444&logo=github)](https://codespaces.new/aepfli/Fun-With-Flags-Demo?devcontainer_path=.devcontainer%2Fexpert%2Fdevcontainer.json)
+[![Java Spring](https://img.shields.io/static/v1?label=Codespace&message=Java%20Spring&color=6db33f&logo=spring)](https://codespaces.new/aepfli/Fun-With-Flags-Demo?devcontainer_path=.devcontainer%2Fjava-spring%2Fdevcontainer.json)
+[![Java Quarkus](https://img.shields.io/static/v1?label=Codespace&message=Java%20Quarkus&color=4695eb&logo=quarkus)](https://codespaces.new/aepfli/Fun-With-Flags-Demo?devcontainer_path=.devcontainer%2Fjava-quarkus%2Fdevcontainer.json)
+[![Go](https://img.shields.io/static/v1?label=Codespace&message=Go&color=00add8&logo=go)](https://codespaces.new/aepfli/Fun-With-Flags-Demo?devcontainer_path=.devcontainer%2Fgo-chi%2Fdevcontainer.json)
+[![Python](https://img.shields.io/static/v1?label=Codespace&message=Python&color=3776ab&logo=python)](https://codespaces.new/aepfli/Fun-With-Flags-Demo?devcontainer_path=.devcontainer%2Fpython-fastapi%2Fdevcontainer.json)
+[![Node](https://img.shields.io/static/v1?label=Codespace&message=Node&color=339933&logo=nodedotjs)](https://codespaces.new/aepfli/Fun-With-Flags-Demo?devcontainer_path=.devcontainer%2Fnode-express%2Fdevcontainer.json)
 
 I built this demo because OpenFeature talks tend to pick one language and leave the rest of the room guessing whether the same ideas apply to them. They do, and this repo proves it. I walk the exact same journey — add the SDK, swap providers, add context, add hooks, go remote — across Java Spring Boot, Java Quarkus, Go, Python (FastAPI), and Node.js (Express). Each folder is self-contained, so if you came for Go you never need to read the Python code, and the steps line up 1:1 so you can peek at another language when you want to compare.
 
@@ -21,19 +23,19 @@ I am a CNCF Ambassador, an OpenFeature maintainer, and I sit in the top three co
 
 The folder name always reads `<language>-<framework>`, so adding a new variant later (`java-micronaut`, `python-flask`, `go-gin`, …) drops in alongside the existing ones without breaking the pattern.
 
-## Pick your phase
+## Walk the steps
 
-The demo is a three-act adventure. Each phase is a separate Codespaces config so you only get the tools you need — fast boot for the early phases, the full operational stack when you're ready for it.
+Pick a language and you're done choosing — there's one Codespace per stack, and the whole journey runs inside it. You don't swap environments as you progress; you just bring up more infrastructure as the steps ask for it. flagd lives in your language folder's `docker-compose.yaml`, and the observability stack and loadgen are shared (see [`observability/`](observability/README.md) and [`loadgen/`](loadgen/README.md)) — `docker compose up` them when you reach the step that needs them.
 
-| Phase | Steps | What it teaches | Codespace |
-| --- | --- | --- | --- |
-| **Beginner** | 1.1, 1.2 | OpenFeature SDK basics, in-memory provider | language toolchains, no Docker |
-| **Intermediate** | 2.1 → 5.2 | flagd, targeting, interceptors, hooks, remote flagd, Testcontainers | + Docker-in-Docker, flagd ports forwarded |
-| **Expert** | 6, 7 | OpenTelemetry traces & metrics, progressive rollout with consequences | + LGTM stack and loadgen ports |
+| Steps | What it teaches | What it needs |
+| --- | --- | --- |
+| **1.1, 1.2** | OpenFeature SDK basics, in-memory provider | just the language toolchain |
+| **2.1 → 5.2** | flagd, targeting, interceptors, hooks, remote flagd, Testcontainers | flagd, via your folder's `docker compose up` |
+| **6, 7** | OpenTelemetry traces & metrics, progressive rollout with consequences | + the shared LGTM stack and loadgen |
 
-Click a Codespaces badge above to launch the matching environment. Locally: clone the repo, then in VS Code run **Dev Containers: Reopen in Container** and pick the phase from the prompt.
+Click your stack's Codespaces badge at the top to launch — it boots a slim, language-specific image straight into that folder. Locally: clone the repo, then in VS Code run **Dev Containers: Reopen in Container** and pick your language from the prompt.
 
-Port `8080` is the app. `8013` is flagd's gRPC eval (the gRPC-Gateway HTTP/JSON paths ride on the same port via cmux); `8014` is flagd management — Prometheus `/metrics`, `/healthz`, `/readyz`; `8015` is the sync gRPC stream that powers `IN_PROCESS`; `8016` is flagd's OFREP HTTP eval API. `3000` is Grafana. `4317` / `4318` are the OTLP receivers. Each phase forwards only the ports it needs.
+Port `8080` is the app. `8013` is flagd's gRPC eval (the gRPC-Gateway HTTP/JSON paths ride on the same port via cmux); `8014` is flagd management — Prometheus `/metrics`, `/healthz`, `/readyz`; `8015` is the sync gRPC stream that powers `IN_PROCESS`; `8016` is flagd's OFREP HTTP eval API. `3000` is Grafana. `4317` / `4318` are the OTLP receivers. Every language Codespace forwards all of these — you just won't touch the later ones until you reach those steps.
 
 ## Slides
 
